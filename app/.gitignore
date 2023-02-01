@@ -1,0 +1,13 @@
+.mypy_cache
+.coverage
+htmlcov
+.env
+app/.env
+app/xlsx
+.pytest_cache
+celerybeat-schedule
+app/test.py
+xlsx
+.vscode
+vscode
+settings.json
