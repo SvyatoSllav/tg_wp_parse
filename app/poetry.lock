@@ -1285,6 +1285,14 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "pyaes"
+version = "1.6.1"
+description = "Pure-Python Implementation of the AES block-cipher and common modes of operation"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "pyasn1"
 version = "0.4.8"
 description = "ASN.1 types and codecs"
@@ -1754,6 +1762,21 @@ python-versions = ">=3.6"
 full = ["aiofiles", "graphene", "itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests", "ujson"]
 
 [[package]]
+name = "telethon"
+version = "1.26.1"
+description = "Full-featured Telegram client library for Python 3"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+pyaes = "*"
+rsa = "*"
+
+[package.extras]
+cryptg = ["cryptg"]
+
+[[package]]
 name = "tenacity"
 version = "6.3.1"
 description = "Retry code until it succeeds"
@@ -1969,7 +1992,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "2d592caf5cd2627ddd032a13a4e4274f81521372f223f873e568b9d64650e407"
+content-hash = "4fec3236a782de65825d219badf71cdbefca96ebf9d65ffe21fd7c29eea656b9"
 
 [metadata.files]
 aio-pika = [
@@ -3234,6 +3257,9 @@ py = [
     {file = "py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378"},
     {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
 ]
+pyaes = [
+    {file = "pyaes-1.6.1.tar.gz", hash = "sha256:02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f"},
+]
 pyasn1 = [
     {file = "pyasn1-0.4.8-py2.py3-none-any.whl", hash = "sha256:39c7e2ec30515947ff4e87fb6f456dfc6e84857d34be479c9d4a4ba4bf46aa5d"},
     {file = "pyasn1-0.4.8.tar.gz", hash = "sha256:aef77c9fb94a3ac588e87841208bdec464471d9871bd5050a287cc9a475cd0ba"},
@@ -3596,6 +3622,10 @@ sqlalchemy-stubs = [
 starlette = [
     {file = "starlette-0.13.2-py3-none-any.whl", hash = "sha256:6169ee78ded501095d1dda7b141a1dc9f9934d37ad23196e180150ace2c6449b"},
     {file = "starlette-0.13.2.tar.gz", hash = "sha256:a9bb130fa7aa736eda8a814b6ceb85ccf7a209ed53843d0d61e246b380afa10f"},
+]
+telethon = [
+    {file = "Telethon-1.26.1-py3-none-any.whl", hash = "sha256:3ec7ea04e61e0179dd08b974b609814e1a5298eeda3d68368a34bba754f43aec"},
+    {file = "Telethon-1.26.1.tar.gz", hash = "sha256:d894f6ef2bf2cb119f6413b9f620957503785bab0999694b4bf67dea36f8ee09"},
 ]
 tenacity = [
     {file = "tenacity-6.3.1-py2.py3-none-any.whl", hash = "sha256:baed357d9f35ec64264d8a4bbf004c35058fad8795c5b0d8a7dc77ecdcbb8f39"},
