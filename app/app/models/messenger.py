@@ -6,6 +6,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -15,7 +16,7 @@ import datetime
 
 
 class Messenger(Base):
-    __tablename__ = "messeger"
+    __tablename__ = "messenger"
 
     class MessengerType(str, enum.Enum):
         telegram = "telegram"
@@ -26,6 +27,9 @@ class Messenger(Base):
     api_token = Column(String)
     api_id = Column(String)
     phone = Column(String)
+    phone_hash = Column(String, nullable=True)
 
-    status = Column(Enum(MessengerType))
+    is_active = Column(Boolean, default=False)
+
+    type = Column(Enum(MessengerType))
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
