@@ -24,8 +24,15 @@ fileConfig(config.config_file_name)
 from app.db.base import Base  # noqa
 from app.models import *
 from app.core.config import settings
+from app.models.messenger import Messenger
+from app.models.chat import Chat, Message
+from app.models.devices import Device
 
 target_metadata = Base.metadata
+target_metadata = Messenger.metadata
+target_metadata = Chat.metadata
+target_metadata = Message.metadata
+target_metadata = Device.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
