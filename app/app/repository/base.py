@@ -34,7 +34,6 @@ class RepositoryBase(Generic[ModelType, ]):
             obj_in
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
-        print(jsonable_encoder(db_obj))
         if isinstance(obj_in, dict):
             update_data = obj_in
         else:
@@ -44,8 +43,12 @@ class RepositoryBase(Generic[ModelType, ]):
                 setattr(db_obj, field, update_data[field])
         self._session.add(db_obj)
         self._session.flush()
+        self._session.commit()
         return db_obj
 
-    def delete(self, *args, db_obj: Optional[ModelType], **kwargs) -> ModelType:
+    def delete(self, commit=False, *args, db_obj: Optional[ModelType], **kwargs,) -> ModelType:
         self._session.delete(db_obj)
         self._session.flush()
+        if commit:
+            self._session.commit()
+
