@@ -1,4 +1,5 @@
 from app.api.api_v1 import api
+from app.api.api_v1.endpoints import messengers, telegram, device
 from app.api import deps
 from fastapi import FastAPI, Response
 from app.core.config import settings
@@ -8,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 def create_app():
     container = Container()
-    container.wire(modules=[deps, api])
+    container.wire(modules=[deps, api, messengers, telegram, device])
     fastapi_app = FastAPI(
         title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json"
     )
