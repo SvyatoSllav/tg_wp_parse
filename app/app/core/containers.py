@@ -6,6 +6,14 @@ from app.core.config import Settings
 from app.core.celery import celery_app
 from app.db.session import SyncSession
 
+from app.repository.messenger import RepositoryMessenger, Messenger
+from app.services.messenger import MessengerService
+
+from app.services.telegram import TelegramService
+
+from app.repository.device import RepositoryDevice, Device
+from app.services.device import DeviceService
+
 
 from app import redis
 
@@ -54,6 +62,21 @@ class Container(containers.DeclarativeContainer):
         redis.init_redis_pool,
         host=config.provided.REDIS_HOST
     )
+
+    repository_messenger = providers.Singleton(
+        RepositoryMessenger,
+        model=Messenger,
+        session=db
+    )
+    repository_device = providers.Singleton(
+        RepositoryDevice,
+        model=Device,
+        session=db
+    )
+
+    messenger_service = providers.Singleton(MessengerService, repository_messenger=repository_messenger)
+    device_service = providers.Singleton(DeviceService, repository_device=repository_device)
+    telegram_service = providers.Singleton(TelegramService, repository_messenger=repository_messenger)
 
 
 @containers.copy(Container)
