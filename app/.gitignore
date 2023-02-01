@@ -11,3 +11,4 @@ xlsx
 .vscode
 vscode
 settings.json
+*.session
