@@ -7,6 +7,15 @@ from sqlalchemy import select
 from app.db.session import SyncSession, scope
 from app.core.config import settings
 
+from app.models.messenger import Messenger
+from app.admin.views.messeger import MessengerView
+
+from app.models.chat import Message, Chat
+from app.admin.views import message, chat
+
+from app.models.devices import Device
+from app.admin.views.device import DeviceView
+
 
 session = SyncSession(settings.SYNC_SQLALCHEMY_DATABASE_URI)
 
@@ -51,6 +60,10 @@ secureApp.wsgi_app = middleware(secureApp.wsgi_app)
 
 # create admin
 admin = Admin(secureApp, name='Admin', base_template='my_master.html', template_mode='bootstrap4')
+admin.add_view(MessengerView(Messenger, session.session))
+admin.add_view(DeviceView(Device, session.session))
+admin.add_view(chat.ChatView(Chat, session.session))
+admin.add_view(message.MessageView(Message, session.session))
 # Create a ModelView to add to our administrative interface
 
 
