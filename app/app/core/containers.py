@@ -17,6 +17,8 @@ from app.services.device import DeviceService
 from app.repository.chat import RepositoryChat, Chat
 from app.services.chat import ChatService
 
+from app.repository.message import RepositoryMessage, Message
+
 
 from app import redis
 
@@ -81,10 +83,20 @@ class Container(containers.DeclarativeContainer):
         model=Chat,
         session=db
     )
+    repository_message = providers.Singleton(
+        RepositoryMessage,
+        model=Message,
+        session=db
+    )
 
     messenger_service = providers.Singleton(MessengerService, repository_messenger=repository_messenger)
     telegram_service = providers.Singleton(TelegramService, repository_messenger=repository_messenger)
-    chat_service = providers.Singleton(ChatService, repository_chat=repository_chat, repository_messenger=repository_messenger)
+    chat_service = providers.Singleton(
+        ChatService,
+        repository_chat=repository_chat,
+        repository_messenger=repository_messenger,
+        repository_message=repository_message,
+    )
     device_service = providers.Singleton(DeviceService, repository_device=repository_device)
 
 

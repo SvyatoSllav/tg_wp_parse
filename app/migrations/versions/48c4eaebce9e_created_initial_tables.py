@@ -1,8 +1,8 @@
-"""added chat message device tables
+"""created initial tables
 
-Revision ID: 432a225137a1
-Revises: fcaddd0f41fc
-Create Date: 2023-02-01 20:04:15.196228
+Revision ID: 48c4eaebce9e
+Revises: 
+Create Date: 2023-02-02 14:40:17.328191
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '432a225137a1'
-down_revision = 'fcaddd0f41fc'
+revision = '48c4eaebce9e'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -25,10 +25,23 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_device_id'), 'device', ['id'], unique=False)
+    op.create_table('messenger',
+    sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+    sa.Column('api_token', sa.String(), nullable=True),
+    sa.Column('api_id', sa.String(), nullable=True),
+    sa.Column('phone', sa.String(), nullable=True),
+    sa.Column('phone_hash', sa.String(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('type', sa.Enum('telegram', 'whats_app', name='messengertype'), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_messenger_id'), 'messenger', ['id'], unique=False)
     op.create_table('chat',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('chat_id', sa.String(), nullable=True),
+    sa.Column('chat_id', sa.Integer(), nullable=True),
     sa.Column('chat_name', sa.String(), nullable=True),
+    sa.Column('last_message_id', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('chat_avatars_img_paths', sa.PickleType(), nullable=True),
     sa.Column('messenger_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -45,7 +58,6 @@ def upgrade():
     sa.Column('auhtor_phone', sa.String(), nullable=True),
     sa.Column('sent_at', sa.DateTime(), nullable=True),
     sa.Column('message_media_paths', sa.PickleType(), nullable=True),
-    sa.Column('last_message_id', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('chat_id', postgresql.UUID(as_uuid=True), nullable=True),
     sa.ForeignKeyConstraint(['chat_id'], ['chat.id'], ),
@@ -61,6 +73,8 @@ def downgrade():
     op.drop_table('message')
     op.drop_index(op.f('ix_chat_id'), table_name='chat')
     op.drop_table('chat')
+    op.drop_index(op.f('ix_messenger_id'), table_name='messenger')
+    op.drop_table('messenger')
     op.drop_index(op.f('ix_device_id'), table_name='device')
     op.drop_table('device')
     # ### end Alembic commands ###

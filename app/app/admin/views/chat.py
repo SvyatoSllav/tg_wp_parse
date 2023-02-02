@@ -6,7 +6,8 @@ class ChatView(ModelView):
         "id",
         "chat_id",
         "chat_name",
-        "created_at",
+        "last_message_id",
         "chat_avatars_img_paths",
         "messenger_id",
+        "created_at",
     ]

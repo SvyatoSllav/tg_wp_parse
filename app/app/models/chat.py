@@ -23,8 +23,9 @@ class Chat(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
 
-    chat_id = Column(String)
+    chat_id = Column(Integer)
     chat_name = Column(String)
+    last_message_id = Column(String, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     chat_avatars_img_paths = Column(MutableList.as_mutable(PickleType), default=[])
@@ -45,11 +46,10 @@ class Message(Base):
     text = Column(String, nullable=True)
     author_id = Column(String)
     author_name = Column(String, nullable=True)
-    auhtor_phone = Column(String, nullable=True)
+    author_phone = Column(String, nullable=True)
     sent_at = Column(DateTime)
     message_media_paths = Column(MutableList.as_mutable(PickleType), default=[])
 
-    last_message_id = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     chat_id = Column(
