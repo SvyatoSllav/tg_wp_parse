@@ -15,3 +15,7 @@ class DeviceService:
         return self._repository_device.create(
             obj_in=data_in, commit=True
         )
+
+    async def delete_device(self, device_id: str):
+        device = self._repository_device.get(id=device_id)
+        self._repository_device.delete(db_obj=device)

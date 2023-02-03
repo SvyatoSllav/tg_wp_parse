@@ -10,11 +10,11 @@ x-function: &python
   networks:
     - internal
   env_file:
-    .env
+    ./.env
 
 services:
   app_db:
-    container_name: ${PROJECT_SLUG}_db
+    # container_name: ${PROJECT_SLUG}_db
     image: postgres:11
     volumes: 
       - app_db-p2p:/var/lib/postgresql/data/pgdata:rw
@@ -28,7 +28,7 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
  
   app_redis:
-    container_name: ${PROJECT_SLUG}_redis
+    # container_name: ${PROJECT_SLUG}_redis
     networks:
       - internal
     image: redis:5.0.0
@@ -36,7 +36,7 @@ services:
 
   app_celery:
     <<: *python
-    container_name: ${PROJECT_SLUG}_app_celery
+    # container_name: ${PROJECT_SLUG}_app_celery
     command:
       - /bin/bash
       - -c
@@ -52,7 +52,7 @@ services:
 
   app:
     <<: *python
-    container_name: ${PROJECT_SLUG}_app
+    # container_name: ${PROJECT_SLUG}_app
     build:
       context: .
       dockerfile: backend.dockerfile 
@@ -64,7 +64,7 @@ services:
 
   app-admin:
     <<: *python
-    container_name: ${PROJECT_SLUG}_app_admin
+    # container_name: ${PROJECT_SLUG}_app_admin
     build:
       context: .
       dockerfile: admin.dockerfile 

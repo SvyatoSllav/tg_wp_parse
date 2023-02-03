@@ -24,3 +24,10 @@ async def create_device(
         data_in: DeviceIn,
         device_service = Depends(Provide[Container.device_service])):
     return await device_service.create_device(data_in=data_in)
+
+
+@router.delete("/delete_device")
+@inject
+@commit_and_close_session
+async def delete_device(device_id: str, device_service = Depends(Provide[Container.device_service])):
+    return await device_service.delete_device(device_id=device_id)

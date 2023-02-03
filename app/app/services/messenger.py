@@ -41,3 +41,7 @@ class MessengerService:
             )
         else:
             return JSONResponse(content={"error_msg": "Неизвестный вид мессенджера."}, status_code=403)
+
+    async def delete_messenger(self, messenger_id: str):
+        messenger = self._repository_messenger.get(id=messenger_id)
+        self._repository_messenger.delete(db_obj=messenger)

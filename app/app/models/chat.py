@@ -23,7 +23,7 @@ class Chat(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
 
-    chat_id = Column(Integer)
+    chat_id = Column(String)
     chat_name = Column(String)
     last_message_id = Column(String, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -35,6 +35,10 @@ class Chat(Base):
         ForeignKey("messenger.id"),
     )
     messenger = relationship("Messenger")
+
+    @property
+    def messenger_type(self):
+        return f"{self.messenger.type}"
 
 
 class Message(Base):
@@ -57,3 +61,7 @@ class Message(Base):
         ForeignKey("chat.id"),
     )
     chat = relationship("Chat")
+
+    @property
+    def messenger_type(self):
+        return f"{self.chat.messenger_type}"

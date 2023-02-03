@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.containers import Container
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi_pagination import add_pagination
 
 
 def create_app():
@@ -32,6 +33,7 @@ def create_app():
     image_static_root_absolute = project_root_absolute / "image"
     fastapi_app.include_router(api.api_router, prefix=settings.API_V1_STR)
     fastapi_app.mount("/image", StaticFiles(directory=image_static_root_absolute), name="image")
+    add_pagination(fastapi_app)
     return fastapi_app
 
 app = create_app()
