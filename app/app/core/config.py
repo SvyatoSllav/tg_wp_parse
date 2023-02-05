@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     ROLLBAR_TOKEN: str
     PYTHON_ENV: EnvEnum = EnvEnum.development
 
+    SERVER_IP: str
+
     class Config:
         case_sensitive = True
 

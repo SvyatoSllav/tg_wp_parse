@@ -41,6 +41,7 @@ class MessageOut(BaseModel):
     message_id: str
     author_name: str
     text: Optional[str]
+    # text_list: list[str]
     message_media_paths: list[str]
     messenger_type: str
     sent_at: datetime.date

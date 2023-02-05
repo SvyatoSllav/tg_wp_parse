@@ -1,6 +1,7 @@
 import requests
 import base64
 import datetime
+import re
 from pathlib import Path
 
 from telethon import TelegramClient
@@ -54,39 +55,53 @@ class ChatService:
 
         headers = {"Authorization": api_token}
         url = f"https://wappi.pro/api/sync/chats/get?profile_id={api_id}"
-        chats = requests.get(url=url, headers=headers).json()
-        return chats
+        response = requests.get(url=url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        return JSONResponse(content={"error_msg": "Не удалось установить соединение с Wappi"}, status_code=400)
 
     async def create_whatsapp_chat(self, chat_in: WPChatIn):
         messenger = self._repository_messenger.get(id=chat_in.messenger_id)
         api_id, api_token = messenger.api_id, messenger.api_token
-        url = "https://wappi.pro/api/sync/contact/get"
-
+        url = "https://wappi.pro/api/sync/contact/info"
         headers = {"Authorization": api_token}
-        params = {"profile_id": api_id, "recipient": chat_in.chat_id}
+        params = {"profile_id": api_id, "user_id": chat_in.chat_id}
         chat = requests.get(url, headers=headers, params=params).json()
-        contact = chat.get("contact")
-        names = [contact.get("pushname"), contact.get("name"), contact.get("shortName"), contact.get("businessName")]
-        name = next((name for name in names if name not in (None, "")), "Unknow")
+        if not chat.get("is_group"):
+            url = "https://wappi.pro/api/sync/contact/get"
 
-        chat = self._repository_chat.get(chat_id=contact.get("id"))
-        if chat:
-            return "Чат уже создан"
+            headers = {"Authorization": api_token}
+            params = {"profile_id": api_id, "recipient": chat_in.chat_id}
+            chat = requests.get(url, headers=headers, params=params).json()
+            contact = chat.get("contact")
+            if chat.get("status") == "error":
+                return JSONResponse(content={"error_msg": chat.get("detail")}, status_code=400)
+            names = [contact.get("pushname"), contact.get("name"), contact.get("shortName"), contact.get("businessName")]
+            name = next((name for name in names if name not in (None, "")), "Unknow")
 
-        obj_in = {
-            "chat_id": contact.get("id"),
-            "chat_name": name,
-            "messenger_id": chat_in.messenger_id
-        }
-        image = contact.get("picture")
-        if image:
-            self.create__image_dir(name)
-            image_file_path = Path().resolve() / "image" / name / "profile_img.jpg"
-            img_path_to_repr = [f"/image/{name}/profile_img.jpg"]
-            self.decode_and_save_wp_img(image_file_path=image_file_path, image=image)
+            chat = self._repository_chat.get(chat_id=contact.get("id"))
+            if chat:
+                return "Чат уже создан"
 
-            obj_in["chat_avatars_img_paths"] = img_path_to_repr
+            obj_in = {
+                "chat_id": contact.get("id"),
+                "chat_name": name,
+                "messenger_id": chat_in.messenger_id
+            }
+            image = contact.get("picture")
+            if image:
+                self.create__image_dir(name)
+                image_file_path = Path().resolve() / "image" / name / "profile_img.jpg"
+                img_path_to_repr = [f"/image/{name}/profile_img.jpg"]
+                self.decode_and_save_wp_img(image_file_path=image_file_path, image=image)
 
+                obj_in["chat_avatars_img_paths"] = img_path_to_repr
+        else:
+            obj_in = {
+                "chat_id": chat.get("profile").get("id"),
+                "chat_name": chat.get("profile").get("id"),
+                "messenger_id": chat_in.messenger_id
+            }
         return self._repository_chat.create(obj_in=obj_in, commit=True)
 
     async def my_telegram_chats(self, messenger_id: str):
@@ -175,7 +190,7 @@ class ChatService:
             tg_chat = await client.get_entity(int(chat.chat_id))
             all_messages = await client(GetHistoryRequest(
                 peer=tg_chat,
-                limit=data_in.limit,
+                limit=10,
                 offset_date=None,
                 offset_id=0,
                 max_id=0,
@@ -187,12 +202,17 @@ class ChatService:
                     continue
                 if type(tg_chat) not in (Chat, Channel):
                     author_name = tg_chat.username
+                    author_id = tg_chat.id
                 else:
                     author_name = tg_chat.title
+                    author_id = tg_chat.id
+                message_text = message.message.replace(',', ' ').replace(";", " ").replace("\n", " ")
+                message_text_list = [word.lower() for word in message_text.split()]
                 obj_in = {
                     "message_id": message.id,
                     "text": message.message,
-                    "author_id": message.id,
+                    "text_list": message_text_list,
+                    "author_id": author_id,
                     "author_name": author_name,
                     "sent_at": message.date,
                     "chat_id": chat.id,
@@ -210,7 +230,14 @@ class ChatService:
             print(str(e))
             await client.disconnect()
 
-    async def messages(self, start_sent_at: datetime.date, end_sent_at: datetime.date):
+    async def messages(
+            self,
+            start_sent_at: datetime.date,
+            end_sent_at: datetime.date,
+            searchText: str,
+            category: list[str]):
+        category = [cat.lower() for cat in category.split(", ")]
+        searchText = searchText.lower()
         chats = self._repository_chat.tg_chats()
         for chat in chats:
             chat = chat[0]
@@ -219,7 +246,11 @@ class ChatService:
                 "chat_id": str(chat.id)
             }
             await self.tg_messages(data_in=MessageIn.parse_obj(data_in))
-        messages = self._repository_message.filter_message(start_sent_at=start_sent_at, end_sent_at=end_sent_at)
+        messages = self._repository_message.filter_message(
+            start_sent_at=start_sent_at,
+            end_sent_at=end_sent_at,
+            searchText=searchText,
+            category=category)
         return paginate(messages)
 
     async def delete_message(self, end_sent_at: datetime.date):
@@ -232,41 +263,66 @@ class ChatService:
         self._repository_chat.delete(db_obj=chat)
 
     async def webhook(self, request):
-        res = await request.json()
-        message = res.get("messages")[0]
-        message_id = message.get("id")
-        author_id =  message.get("from")
-        author_name = message.get("senderName")
-        sent_at = message.get("timestamp")
+        try:
+            res = await request.json()
+            print(res)
+        except Exception as e:
+            print(str(e))
+            return str(e)
+        # Логика для проверки сохраненности группы
+        if type(res.get("messages")) != list and res.get("messages").get("chat_id"):
+            chat = self._repository_chat.get(chat_id=res.get("messages").get("chat_id"))
+            if not chat:
+                return JSONResponse(content={"error_msg": "Чат не отслеживается"}, status_code=400)
 
-        chat = self._repository_chat.get(chat_id=author_id)
-        if not chat:
-            return "Чат не отслеживается"
+        message = res.get("messages")
+        if type(message) == list:
+            message = message[0]
+            author_id =  message.get("from")
+            chat = self._repository_chat.get(chat_id=author_id)
+            # Логика для проверки сохраненности юзера
+            if not chat:
+                return JSONResponse(content={"error_msg": "Чат не отслеживается"}, status_code=400)
+            message_id = message.get("id")
+            author_name = message.get("senderName")
+            sent_at = message.get("timestamp")
 
-        if message.get("type") == "chat":
-            obj_in = {
-                "message_id": message_id,
-                "text": message.get("body"),
-                "author_id": author_id,
-                "author_name": author_name,
-                "sent_at": sent_at,
-                "chat_id": chat.id
-            }
-        elif message.get("type") == "image":
-            obj_in = {
-                "message_id": message_id,
-                "text": message.get("caption"),
-                "author_id": author_id,
-                "author_name": author_name,
-                "sent_at": sent_at,
-                "chat_id": chat.id
-            }
-            self.create__image_dir(author_name)
-            image = res.get("messages")[0].get("body")
-            image_file_path = Path().resolve() / "image" / author_name / f"{message_id[:11]}.jpg"
-            image_path_to_repr = [f"/image/{author_name}/{message_id[:11]}.jpg"]
-            self.decode_and_save_wp_img(image_file_path=image_file_path, image=image)
+            if message.get("type") == "chat":
+                message_text = message.get("body").replace(',', ' ').replace(";", " ").replace("\n", " ")
+                text_list = message_text.split()
+                for word in text_list:
+                    word.lower()
+                obj_in = {
+                    "message_id": message_id,
+                    "text": message.get("body"),
+                    "text_list":  text_list,
+                    "author_id": author_id,
+                    "author_name": author_name,
+                    "sent_at": sent_at,
+                    "chat_id": chat.id
+                }
+                return self._repository_message.create(obj_in=obj_in, commit=True)
+            elif message.get("type") == "image":
+                message_text = message.get("caption").replace(',', ' ').replace(";", " ").replace("\n", " ")
+                text_list = message_text.split()
+                for word in text_list:
+                    word.lower()
+                obj_in = {
+                    "message_id": message_id,
+                    "text": message.get("caption"),
+                    "text_list": text_list,
+                    "author_id": author_id,
+                    "author_name": author_name,
+                    "sent_at": sent_at,
+                    "chat_id": chat.id
+                }
+                self.create__image_dir(author_name)
+                image = res.get("messages")[0].get("body")
+                image_file_path = Path().resolve() / "image" / author_name / f"{message_id[:11]}.jpg"
+                image_path_to_repr = [f"/image/{author_name}/{message_id[:11]}.jpg"]
+                self.decode_and_save_wp_img(image_file_path=image_file_path, image=image)
 
-            obj_in["message_media_paths"] = image_path_to_repr
-
-        return self._repository_message.create(obj_in=obj_in, commit=True)
+                obj_in["message_media_paths"] = image_path_to_repr
+                return self._repository_message.create(obj_in=obj_in, commit=True)
+        else:
+            pass

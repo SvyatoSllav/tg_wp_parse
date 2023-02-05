@@ -1,8 +1,8 @@
-"""added default value to last message id field
+"""alter array field
 
-Revision ID: cda1458710d5
-Revises: 48c4eaebce9e
-Create Date: 2023-02-02 16:41:25.449462
+Revision ID: c71d6c153520
+Revises: 0019191656ec
+Create Date: 2023-02-04 19:44:22.253157
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'cda1458710d5'
-down_revision = '48c4eaebce9e'
+revision = 'c71d6c153520'
+down_revision = '0019191656ec'
 branch_labels = None
 depends_on = None
 

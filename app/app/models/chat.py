@@ -11,7 +11,7 @@ from sqlalchemy import (
     Boolean,
 )
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.ext.mutable import MutableList
 from sqlalchemy import PickleType
 
@@ -48,6 +48,7 @@ class Message(Base):
 
     message_id = Column(String)
     text = Column(String, nullable=True)
+    text_list = Column(ARRAY(String), default=[])
     author_id = Column(String)
     author_name = Column(String, nullable=True)
     author_phone = Column(String, nullable=True)

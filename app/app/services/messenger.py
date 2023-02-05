@@ -1,4 +1,7 @@
+import requests
 from fastapi.responses import JSONResponse
+
+from app.core.config import settings
 
 from app.models.messenger import Messenger
 
@@ -36,6 +39,10 @@ class MessengerService:
             )
         elif messenger_type == Messenger.MessengerType.whats_app:
             obj_in["type"] = Messenger.MessengerType.whats_app
+            url = "https://wappi.pro/api/webhook/url/set"
+            headers = {"Authorization": data_in.api_token}
+            params = {"profile_id": data_in.api_id, "url": f"{settings.SERVER_IP}/api/v1/chat/webhook"}
+            requests.post(url, headers=headers, params=params)
             return self._repository_messenger.create(
                 obj_in=obj_in, commit=True
             )

@@ -25,4 +25,5 @@ class Device(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
 
     name = Column(String)
+    device_id = Column(String)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

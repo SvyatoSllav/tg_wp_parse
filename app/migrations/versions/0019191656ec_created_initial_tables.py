@@ -1,8 +1,8 @@
 """created initial tables
 
-Revision ID: 48c4eaebce9e
+Revision ID: 0019191656ec
 Revises: 
-Create Date: 2023-02-02 14:40:17.328191
+Create Date: 2023-02-04 19:29:21.074391
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '48c4eaebce9e'
+revision = '0019191656ec'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -39,7 +39,7 @@ def upgrade():
     op.create_index(op.f('ix_messenger_id'), 'messenger', ['id'], unique=False)
     op.create_table('chat',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('chat_id', sa.Integer(), nullable=True),
+    sa.Column('chat_id', sa.String(), nullable=True),
     sa.Column('chat_name', sa.String(), nullable=True),
     sa.Column('last_message_id', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
@@ -53,9 +53,10 @@ def upgrade():
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
     sa.Column('message_id', sa.String(), nullable=True),
     sa.Column('text', sa.String(), nullable=True),
+    sa.Column('text_list', sa.ARRAY(sa.String()), nullable=True),
     sa.Column('author_id', sa.String(), nullable=True),
     sa.Column('author_name', sa.String(), nullable=True),
-    sa.Column('auhtor_phone', sa.String(), nullable=True),
+    sa.Column('author_phone', sa.String(), nullable=True),
     sa.Column('sent_at', sa.DateTime(), nullable=True),
     sa.Column('message_media_paths', sa.PickleType(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),

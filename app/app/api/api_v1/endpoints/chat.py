@@ -21,7 +21,7 @@ async def all_saved_chats(chat_service = Depends(Provide[Container.chat_service]
     return await chat_service.all_chats()
 
 
-@router.get("/my_whatsapp_chats", response_model=WPChatsOut)
+@router.get("/my_whatsapp_chats")
 @inject
 @commit_and_close_session
 async def my_whatsapp_chats(messenger_id: str, chat_service = Depends(Provide[Container.chat_service])):
@@ -61,14 +61,16 @@ async def create_tg_chat(
 #     return await chat_service.tg_messages(data_in=data_in)
 
 
-@router.post("/messages", response_model=Page[MessageOut])
+@router.get("/messages", response_model=Page[MessageOut])
 @inject
 @commit_and_close_session
 async def messages(
+    searchText: Optional[str] = "",
+    category: str = "",
     start_sent_at: Optional[datetime.date] = "2022-01-01",
     end_sent_at: Optional[datetime.date] = "2024-02-14",
     chat_service = Depends(Provide[Container.chat_service])):
-    return await chat_service.messages(start_sent_at, end_sent_at)
+    return await chat_service.messages(start_sent_at, end_sent_at, searchText=searchText, category=category)
 
 
 @router.delete("/delete_message",)
