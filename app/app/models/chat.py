@@ -54,6 +54,7 @@ class Message(Base):
     author_phone = Column(String, nullable=True)
     sent_at = Column(DateTime)
     message_media_paths = Column(MutableList.as_mutable(PickleType), default=[])
+    author_link = Column(String, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 

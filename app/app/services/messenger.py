@@ -43,6 +43,7 @@ class MessengerService:
             headers = {"Authorization": data_in.api_token}
             params = {"profile_id": data_in.api_id, "url": f"{settings.SERVER_IP}/api/v1/chat/webhook"}
             requests.post(url, headers=headers, params=params)
+            obj_in["is_active"] = True
             return self._repository_messenger.create(
                 obj_in=obj_in, commit=True
             )

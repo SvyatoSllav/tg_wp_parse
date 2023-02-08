@@ -4,7 +4,7 @@ import datetime
 import re
 from pathlib import Path
 
-from telethon import TelegramClient
+from telethon import TelegramClient, functions
 from telethon.types import ChatPhotoEmpty, User, MessageMediaPhoto, Channel, Chat
 from telethon.tl.functions.messages import GetHistoryRequest
 
@@ -67,7 +67,7 @@ class ChatService:
         headers = {"Authorization": api_token}
         params = {"profile_id": api_id, "user_id": chat_in.chat_id}
         chat = requests.get(url, headers=headers, params=params).json()
-        if not chat.get("is_group"):
+        if not chat.get("profile").get("is_group"):
             url = "https://wappi.pro/api/sync/contact/get"
 
             headers = {"Authorization": api_token}
@@ -97,11 +97,20 @@ class ChatService:
 
                 obj_in["chat_avatars_img_paths"] = img_path_to_repr
         else:
+            image = chat.get("profile").get("picture")
+            name = chat.get("profile").get("group").get("Name")
             obj_in = {
                 "chat_id": chat.get("profile").get("id"),
-                "chat_name": chat.get("profile").get("id"),
-                "messenger_id": chat_in.messenger_id
+                "chat_name": name,
+                "messenger_id": chat_in.messenger_id,
             }
+            if image:
+                self.create__image_dir(name)
+                image_file_path = Path().resolve() / "image" / name / "group_img.jpg"
+                img_path_to_repr = [f"/image/{name}/group_img.jpg"]
+                self.decode_and_save_wp_img(image_file_path=image_file_path, image=image)
+                obj_in["chat_avatars_img_paths"] = img_path_to_repr
+            
         return self._repository_chat.create(obj_in=obj_in, commit=True)
 
     async def my_telegram_chats(self, messenger_id: str):
@@ -139,18 +148,33 @@ class ChatService:
         try:
             chat = await client.get_entity(int(chat_in.chat_id))
 
-            if self._repository_chat.get(chat_id=str(chat.id)):
-                return JSONResponse(content={"error_msg": "Данная группа уже существует"}, status_code=403)
+            # if self._repository_chat.get(chat_id=str(chat.id)):
+            #     return JSONResponse(content={"error_msg": "Данная группа уже существует"}, status_code=403)
 
             if type(chat) is User:
                 chat_name = chat.username
             else:
                 chat_name = chat.title
 
+            all_messages = await client(GetHistoryRequest(
+                peer=chat,
+                limit=1,
+                offset_date=None,
+                offset_id=0,
+                max_id=0,
+                min_id=0,
+                add_offset=0,
+                hash=0))
+
+            all_messages = reversed(all_messages.messages)
+            for message in all_messages:
+                last_message_id = message.id
+
             obj_in = {
                 "chat_id": str(chat.id),
                 "chat_name": chat_name,
-                "messenger": messenger
+                "messenger": messenger,
+                "last_message_id": last_message_id
             }
 
             self.create__image_dir(image_dir_name=chat_name)
@@ -167,6 +191,28 @@ class ChatService:
         except Exception as e:
             print(str(e))
             await client.disconnect()
+
+    # async def tg_user_info(self, tg_user_id: int, messenger_id: str):
+    #     messenger = self._repository_messenger.get(id=messenger_id)
+    #     phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
+    #     session_name = self.session_name(phone=phone, api_id=api_id)
+    #     async with TelegramClient(session_name, api_id, api_hash) as client:
+    #         user = await client.get_entity(tg_user_id)
+    #     if type(user) == Chat:
+    #         representaion = {
+    #             "id": user.id,
+    #             "title": user.title,
+    #         }
+    #         return representaion
+    #     representaion = {
+    #         "id": user.id,
+    #         "first_name": user.first_name if user.first_name else None,
+    #         "last_name": user.last_name if user.last_name else None,
+    #         "username": user.username if user.username else None,
+    #         "link": f"https://t.me/{user.username}",
+    #         "phone": user.phone,
+    #     }
+    #     return representaion
 
     async def _save_tg_message_media(self, client, message, chat_name) -> list[str]:
         """Загружает все фото из сообщения и возвращает список с относительными путями."""
@@ -190,7 +236,7 @@ class ChatService:
             tg_chat = await client.get_entity(int(chat.chat_id))
             all_messages = await client(GetHistoryRequest(
                 peer=tg_chat,
-                limit=10,
+                limit=50,
                 offset_date=None,
                 offset_id=0,
                 max_id=0,
@@ -198,28 +244,36 @@ class ChatService:
                 add_offset=0,
                 hash=0))
             for message in reversed(all_messages.messages):
+                print(message)
                 if not message.message and not message.media:
                     continue
-                if type(tg_chat) not in (Chat, Channel):
-                    author_name = tg_chat.username
-                    author_id = tg_chat.id
-                else:
-                    author_name = tg_chat.title
-                    author_id = tg_chat.id
+                user = await client.get_entity(message.from_id.user_id)
                 message_text = message.message.replace(',', ' ').replace(";", " ").replace("\n", " ")
                 message_text_list = [word.lower() for word in message_text.split()]
+                username = user.username if user.username else "Unknow"
+                phone = user.phone if user.phone else "Unknow"
                 obj_in = {
                     "message_id": message.id,
                     "text": message.message,
                     "text_list": message_text_list,
-                    "author_id": author_id,
-                    "author_name": author_name,
+                    "author_id": user.id,
+                    "author_name": user.username,
+                    "author_link": f"https://t.me/{username}",
+                    "author_phone": phone,
                     "sent_at": message.date,
                     "chat_id": chat.id,
                 }
                 if message.media:
-                    message_media_paths = await self._save_tg_message_media(client=client, message=message, chat_name=author_name)
+                    message_media_paths = await self._save_tg_message_media(client=client, message=message, chat_name=user.username)
                     obj_in["message_media_paths"] = message_media_paths
+                    if not message.message:
+                        last_message = self._repository_message.get(message_id=chat.last_message_id)
+                        new_message_media = last_message.message_media_paths + message_media_paths
+                        self._repository_message.update(db_obj=last_message, obj_in={"message_media_paths": new_message_media})
+                        continue
+                    self._repository_message.create(obj_in=obj_in, commit=True)
+                    self._repository_chat.update(db_obj=chat, obj_in={"last_message_id": str(message.id)})
+                    continue
 
                 self._repository_message.create(obj_in=obj_in, commit=True)
                 self._repository_chat.update(db_obj=chat, obj_in={"last_message_id": str(message.id)})
