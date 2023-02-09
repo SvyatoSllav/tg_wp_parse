@@ -73,6 +73,18 @@ async def messages(
     return await chat_service.messages(start_sent_at, end_sent_at, searchText=searchText, category=category)
 
 
+@router.get("/all_messages", response_model=list[MessageOut])
+@inject
+@commit_and_close_session
+async def all_messages(
+    searchText: Optional[str] = "",
+    category: str = "",
+    start_sent_at: Optional[datetime.date] = "2022-01-01",
+    end_sent_at: Optional[datetime.date] = "2024-02-14",
+    chat_service = Depends(Provide[Container.chat_service])):
+    return await chat_service.all_messages(start_sent_at, end_sent_at, searchText=searchText, category=category)
+
+
 @router.delete("/delete_message",)
 @inject
 @commit_and_close_session

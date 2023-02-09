@@ -15,7 +15,9 @@ class RepositoryMessage(RepositoryBase[Message]):
         query = self._session.query(self._model
             ).filter(self._model.sent_at >= start_sent_at
             ).filter(self._model.sent_at <= end_sent_at
-            ).filter(func.lower(self._model.text).contains(searchText))
+            )
+        if searchText != "":
+            query = query.filter(func.lower(self._model.text).contains(searchText))
         if category != [""]:
             query = query.filter(or_(*filters)
             )

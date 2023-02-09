@@ -119,33 +119,37 @@ class ChatService:
         session_name = self.session_name(phone=phone, api_id=api_id)
 
         client = TelegramClient(session_name, api_id, api_hash)
-        await client.connect()
-        all_dialogs = await client.get_dialogs()
-        representation = []
-        for dialog in all_dialogs:
-            if dialog.is_user:
-                dialog_type = "user/bot"
-            elif dialog.is_group:
-                dialog_type = "group"
-            else:
-                dialog_type = "channel"
+        try:
+            await client.connect()
+            all_dialogs = await client.get_dialogs()
+            representation = []
+            for dialog in all_dialogs:
+                if dialog.is_user:
+                    dialog_type = "user/bot"
+                elif dialog.is_group:
+                    dialog_type = "group"
+                else:
+                    dialog_type = "channel"
 
-            representation.append({
-                "dialog_title": dialog.title,
-                "dialog_id": dialog.id,
-                "dialog_type": dialog_type
-            })
-        await client.disconnect()
-        return representation
+                representation.append({
+                    "dialog_title": dialog.title,
+                    "dialog_id": dialog.id,
+                    "dialog_type": dialog_type
+                })
+            await client.disconnect()
+            return representation
+        except Exception as e:
+            print(str(e))
+            return JSONResponse(content={"error_msg": "Не получилось авторизоваться в телеграм. Переавторизуйтесь"}, status_code=403)
 
     async def create_tg_chat(self, chat_in: ChatIn):
         messenger = self._repository_messenger.get(id=chat_in.messenger_id)
         phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
         session_name = self.session_name(phone=phone, api_id=api_id)
 
-        client = TelegramClient(session_name, api_id, api_hash)
-        await client.connect()
         try:
+            client = TelegramClient(session_name, api_id, api_hash)
+            await client.connect()
             chat = await client.get_entity(int(chat_in.chat_id))
 
             # if self._repository_chat.get(chat_id=str(chat.id)):
@@ -191,6 +195,7 @@ class ChatService:
         except Exception as e:
             print(str(e))
             await client.disconnect()
+            return JSONResponse(content={"error_msg": "Не получилось авторизоваться в телеграм. Переавторизуйтесь"}, status_code=403)
 
     # async def tg_user_info(self, tg_user_id: int, messenger_id: str):
     #     messenger = self._repository_messenger.get(id=messenger_id)
@@ -247,7 +252,10 @@ class ChatService:
                 print(message)
                 if not message.message and not message.media:
                     continue
-                user = await client.get_entity(message.from_id.user_id)
+                if type(tg_chat) == User:
+                    user = await client.get_entity(message.peer_id.user_id)
+                else:
+                    user = await client.get_entity(message.from_id.user_id)
                 message_text = message.message.replace(',', ' ').replace(";", " ").replace("\n", " ")
                 message_text_list = [word.lower() for word in message_text.split()]
                 username = user.username if user.username else "Unknow"
@@ -283,6 +291,7 @@ class ChatService:
         except Exception as e:
             print(str(e))
             await client.disconnect()
+            return str(e)
 
     async def messages(
             self,
@@ -306,6 +315,29 @@ class ChatService:
             searchText=searchText,
             category=category)
         return paginate(messages)
+    
+    async def all_messages(
+            self,
+            start_sent_at: datetime.date,
+            end_sent_at: datetime.date,
+            searchText: str,
+            category: list[str]):
+        category = [cat.lower() for cat in category.split(", ")]
+        searchText = searchText.lower()
+        chats = self._repository_chat.tg_chats()
+        for chat in chats:
+            chat = chat[0]
+            data_in = {
+                "messenger_id": str(chat.messenger_id),
+                "chat_id": str(chat.id)
+            }
+            await self.tg_messages(data_in=MessageIn.parse_obj(data_in))
+        messages = self._repository_message.filter_message(
+            start_sent_at=start_sent_at,
+            end_sent_at=end_sent_at,
+            searchText=searchText,
+            category=category)
+        return messages.all()
 
     async def delete_message(self, end_sent_at: datetime.date):
         old_messages = self._repository_message.list(Message.sent_at <= end_sent_at)
@@ -319,7 +351,7 @@ class ChatService:
     async def webhook(self, request):
         try:
             res = await request.json()
-            print(res)
+            # print(res)
         except Exception as e:
             print(str(e))
             return str(e)
@@ -332,15 +364,14 @@ class ChatService:
         message = res.get("messages")
         if type(message) == list:
             message = message[0]
-            author_id =  message.get("from")
-            chat = self._repository_chat.get(chat_id=author_id)
+            chat_id =  message.get("chatId")
+            chat = self._repository_chat.get(chat_id=str(chat_id))
             # Логика для проверки сохраненности юзера
             if not chat:
                 return JSONResponse(content={"error_msg": "Чат не отслеживается"}, status_code=400)
             message_id = message.get("id")
             author_name = message.get("senderName")
             sent_at = message.get("timestamp")
-
             if message.get("type") == "chat":
                 message_text = message.get("body").replace(',', ' ').replace(";", " ").replace("\n", " ")
                 text_list = message_text.split()
@@ -350,22 +381,19 @@ class ChatService:
                     "message_id": message_id,
                     "text": message.get("body"),
                     "text_list":  text_list,
-                    "author_id": author_id,
+                    "author_id": message.get("from"),
                     "author_name": author_name,
                     "sent_at": sent_at,
                     "chat_id": chat.id
                 }
-                return self._repository_message.create(obj_in=obj_in, commit=True)
+                message = self._repository_message.create(obj_in=obj_in, commit=True)
+                return message
             elif message.get("type") == "image":
-                message_text = message.get("caption").replace(',', ' ').replace(";", " ").replace("\n", " ")
-                text_list = message_text.split()
-                for word in text_list:
-                    word.lower()
+                caption = message.get("caption")
                 obj_in = {
                     "message_id": message_id,
-                    "text": message.get("caption"),
-                    "text_list": text_list,
-                    "author_id": author_id,
+                    "text": caption,
+                    "author_id": message.get("from"),
                     "author_name": author_name,
                     "sent_at": sent_at,
                     "chat_id": chat.id
@@ -377,6 +405,6 @@ class ChatService:
                 self.decode_and_save_wp_img(image_file_path=image_file_path, image=image)
 
                 obj_in["message_media_paths"] = image_path_to_repr
-                return self._repository_message.create(obj_in=obj_in, commit=True)
+                message = self._repository_message.create(obj_in=obj_in, commit=True)
         else:
             pass

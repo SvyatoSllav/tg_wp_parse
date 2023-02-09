@@ -1,6 +1,8 @@
 import requests
 from fastapi.responses import JSONResponse
 
+from sqlalchemy.exc import DataError, IntegrityError, PendingRollbackError
+
 from app.core.config import settings
 
 from app.models.messenger import Messenger
@@ -51,5 +53,13 @@ class MessengerService:
             return JSONResponse(content={"error_msg": "Неизвестный вид мессенджера."}, status_code=403)
 
     async def delete_messenger(self, messenger_id: str):
-        messenger = self._repository_messenger.get(id=messenger_id)
-        self._repository_messenger.delete(db_obj=messenger)
+        try:
+            messenger = self._repository_messenger.get(id=messenger_id)
+            self._repository_messenger.delete(db_obj=messenger)
+            return JSONResponse(content={"isDeleted": True, "message": "Мессенджер удалён"}, status_code=200)
+        except DataError as e:
+            print(str(e))
+            return JSONResponse(content={"isDeleted": False, "message": "Мессенджер не существует"}, status_code=400)
+        except IntegrityError as e:
+            print(str(e))
+            return JSONResponse(content={"isDeleted": False, "message": "Мессенджер имеет связанные чаты, удалите сначала их"}, status_code=400)

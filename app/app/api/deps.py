@@ -1,4 +1,5 @@
 from fastapi import Header, Depends, Response, HTTPException
+from sqlalchemy.exc import DataError, IntegrityError, PendingRollbackError
 from dependency_injector.wiring import inject, Provide
 from app.core.containers import Container
 from app.db.session import scope
