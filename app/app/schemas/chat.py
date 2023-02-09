@@ -45,7 +45,7 @@ class MessageOut(BaseModel):
     author_phone: Optional[str]
     message_media_paths: list[str]
     messenger_type: str
-    sent_at: datetime.date
+    sent_at: datetime.datetime
     created_at: datetime.date
 
     class Config:
