@@ -43,8 +43,9 @@ class TelegramService:
             phone_code_hash=phone_hash,
         )
         self._repository_messenger.update(db_obj=messenger, obj_in={"is_active": True})
+        status = await client.is_user_authorized()
         client.disconnect()
-        return JSONResponse(content="Успешно подключено", status_code=200)
+        return JSONResponse(content={"status": status}, status_code=200)
 
     async def me(self, tg_messenger_id):
         messenger = self._repository_messenger.get(id=tg_messenger_id)
