@@ -28,6 +28,7 @@ class Messenger(Base):
     api_id = Column(String)
     phone = Column(String)
     phone_hash = Column(String, nullable=True)
+    code = Column(String, nullable=True)
 
     is_active = Column(Boolean, default=False)
 
