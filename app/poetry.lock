@@ -1795,7 +1795,7 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart", "pyyam
 
 [[package]]
 name = "telethon"
-version = "1.26.1"
+version = "1.27.0"
 description = "Full-featured Telegram client library for Python 3"
 category = "main"
 optional = false
@@ -2024,7 +2024,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "cff72dc3ffe44853bb14f513c375350e3954262d9295162d68e037e987c29562"
+content-hash = "39a29a9e81623f291173528c2c2d6ef8c6a404e73528bba9243d8300a305c9ca"
 
 [metadata.files]
 aio-pika = [
@@ -3660,8 +3660,8 @@ starlette = [
     {file = "starlette-0.22.0.tar.gz", hash = "sha256:b092cbc365bea34dd6840b42861bdabb2f507f8671e642e8272d2442e08ea4ff"},
 ]
 telethon = [
-    {file = "Telethon-1.26.1-py3-none-any.whl", hash = "sha256:3ec7ea04e61e0179dd08b974b609814e1a5298eeda3d68368a34bba754f43aec"},
-    {file = "Telethon-1.26.1.tar.gz", hash = "sha256:d894f6ef2bf2cb119f6413b9f620957503785bab0999694b4bf67dea36f8ee09"},
+    {file = "Telethon-1.27.0-py3-none-any.whl", hash = "sha256:39ae3c3335ddd5acc80e395969f27556df140a73e58e9d3bb45863c766c23a8c"},
+    {file = "Telethon-1.27.0.tar.gz", hash = "sha256:21fb26051adc521a4a00a157e6f4a9e87711940ac3504414f96e66056918ef61"},
 ]
 tenacity = [
     {file = "tenacity-6.3.1-py2.py3-none-any.whl", hash = "sha256:baed357d9f35ec64264d8a4bbf004c35058fad8795c5b0d8a7dc77ecdcbb8f39"},
