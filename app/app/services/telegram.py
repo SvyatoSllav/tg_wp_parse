@@ -42,18 +42,26 @@ class TelegramService:
             code=code,
             phone_code_hash=phone_hash,
         )
-        self._repository_messenger.update(db_obj=messenger, obj_in={"is_active": True})
+        self._repository_messenger.update(db_obj=messenger, obj_in={"is_active": True, "code": code})
         status = await client.is_user_authorized()
         client.disconnect()
         return JSONResponse(content={"status": status}, status_code=200)
 
     async def me(self, tg_messenger_id):
         messenger = self._repository_messenger.get(id=tg_messenger_id)
-        phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
+        phone, phone_hash, api_id, api_hash, code = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token, messenger.code
         session_name = self.session_name(phone=phone, api_id=api_id)
+        print(session_name)
 
         client = TelegramClient(session_name, api_id, api_hash)
         await client.connect()
+        if not await client.is_user_authorized():
+            print("FOOBAR")
+            await client.sign_in(
+                phone=phone,
+                code=code,
+                phone_code_hash=phone_hash,
+            )
         me = await client.get_me()
         await client.disconnect()
         return me.first_name
