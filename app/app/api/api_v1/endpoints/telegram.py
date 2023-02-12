@@ -31,11 +31,11 @@ async def authorize_messenger(
     return await telegram_service.authorize_messenger(tg_messenger_id=tg_messenger_id, code=code)
 
 
-# @router.post("/me")
-# @inject
-# @commit_and_close_session
-# async def me(
-#         tg_messenger_id: str,
-#         telegram_service = Depends(Provide[Container.telegram_service])):
-#     """Отправляет в личку мессенджера код подтверждения."""
-#     return await telegram_service.me(tg_messenger_id=tg_messenger_id)
+@router.post("/me")
+@inject
+@commit_and_close_session
+async def me(
+        tg_messenger_id: str,
+        telegram_service = Depends(Provide[Container.telegram_service])):
+    """Отправляет в личку мессенджера код подтверждения."""
+    return await telegram_service.me(tg_messenger_id=tg_messenger_id)
