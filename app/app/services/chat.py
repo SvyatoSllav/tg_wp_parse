@@ -197,28 +197,6 @@ class ChatService:
             await client.disconnect()
             return JSONResponse(content={"error_msg": "Не получилось авторизоваться в телеграм. Переавторизуйтесь"}, status_code=403)
 
-    # async def tg_user_info(self, tg_user_id: int, messenger_id: str):
-    #     messenger = self._repository_messenger.get(id=messenger_id)
-    #     phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
-    #     session_name = self.session_name(phone=phone, api_id=api_id)
-    #     async with TelegramClient(session_name, api_id, api_hash) as client:
-    #         user = await client.get_entity(tg_user_id)
-    #     if type(user) == Chat:
-    #         representaion = {
-    #             "id": user.id,
-    #             "title": user.title,
-    #         }
-    #         return representaion
-    #     representaion = {
-    #         "id": user.id,
-    #         "first_name": user.first_name if user.first_name else None,
-    #         "last_name": user.last_name if user.last_name else None,
-    #         "username": user.username if user.username else None,
-    #         "link": f"https://t.me/{user.username}",
-    #         "phone": user.phone,
-    #     }
-    #     return representaion
-
     async def _save_tg_message_media(self, client, message, chat_name) -> list[str]:
         """Загружает все фото из сообщения и возвращает список с относительными путями."""
         chat_image_dir = Path().resolve() / "image" / chat_name / f"{chat_name}_{message.id}"
@@ -351,7 +329,7 @@ class ChatService:
     async def webhook(self, request):
         try:
             res = await request.json()
-            # print(res)
+            print(res)
         except Exception as e:
             print(str(e))
             return str(e)

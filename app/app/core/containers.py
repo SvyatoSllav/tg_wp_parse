@@ -89,13 +89,18 @@ class Container(containers.DeclarativeContainer):
         session=db
     )
 
-    messenger_service = providers.Singleton(MessengerService, repository_messenger=repository_messenger)
+    messenger_service = providers.Singleton(
+        MessengerService,
+        repository_messenger=repository_messenger,
+        repository_chat=repository_chat,
+        repository_message=repository_message,
+    )
     telegram_service = providers.Singleton(TelegramService, repository_messenger=repository_messenger)
     chat_service = providers.Singleton(
         ChatService,
         repository_chat=repository_chat,
-        repository_messenger=repository_messenger,
         repository_message=repository_message,
+        repository_messenger=repository_messenger,
     )
     device_service = providers.Singleton(DeviceService, repository_device=repository_device)
 

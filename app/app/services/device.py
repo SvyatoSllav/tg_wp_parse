@@ -20,5 +20,5 @@ class DeviceService:
         )
 
     async def delete_device(self, device_id: str):
-        device = self._repository_device.get(id=device_id)
+        device = self._repository_device.get(device_id=device_id)
         self._repository_device.delete(db_obj=device)
