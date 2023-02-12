@@ -115,12 +115,19 @@ class ChatService:
 
     async def my_telegram_chats(self, messenger_id: str):
         messenger = self._repository_messenger.get(id=messenger_id)
-        phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
+        phone, phone_hash, api_id, api_hash, code = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token, messenger.code
         session_name = self.session_name(phone=phone, api_id=api_id)
 
         client = TelegramClient(session_name, api_id, api_hash)
         try:
             await client.connect()
+            if not await client.is_user_authorized():
+                print("NOT CONNECTED")
+                await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    phone_code_hash=phone_hash,
+                )
             all_dialogs = await client.get_dialogs()
             representation = []
             for dialog in all_dialogs:
@@ -144,16 +151,19 @@ class ChatService:
 
     async def create_tg_chat(self, chat_in: ChatIn):
         messenger = self._repository_messenger.get(id=chat_in.messenger_id)
-        phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
+        phone, phone_hash, api_id, api_hash, code = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token, messenger.code
         session_name = self.session_name(phone=phone, api_id=api_id)
 
         try:
             client = TelegramClient(session_name, api_id, api_hash)
             await client.connect()
+            if not await client.is_user_authorized():
+                await client.sign_in(
+                    phone=phone,
+                    code=code,
+                    phone_code_hash=phone_hash,
+                )
             chat = await client.get_entity(int(chat_in.chat_id))
-
-            # if self._repository_chat.get(chat_id=str(chat.id)):
-            #     return JSONResponse(content={"error_msg": "Данная группа уже существует"}, status_code=403)
 
             if type(chat) is User:
                 chat_name = chat.username
@@ -210,11 +220,17 @@ class ChatService:
     async def tg_messages(self, data_in: MessageIn):
         messenger = self._repository_messenger.get(id=data_in.messenger_id)
         chat = self._repository_chat.get(id=data_in.chat_id)
-        phone, phone_hash, api_id, api_hash = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token 
+        phone, phone_hash, api_id, api_hash, code = messenger.phone, messenger.phone_hash, messenger.api_id, messenger.api_token, messenger.code 
         session_name = self.session_name(phone=phone, api_id=api_id)
 
         client = TelegramClient(session_name, api_id, api_hash)
         await client.connect()
+        if not await client.is_user_authorized():
+            await client.sign_in(
+                phone=phone,
+                code=code,
+                phone_code_hash=phone_hash,
+            )
         try:
             tg_chat = await client.get_entity(int(chat.chat_id))
             all_messages = await client(GetHistoryRequest(
